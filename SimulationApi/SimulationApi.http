@@ -1,0 +1,65 @@
+@base = http://localhost:5000
+
+### 헬스체크
+GET {{base}}/api/health
+
+###
+
+### 유효성 검사만 (시뮬레이션 없음)
+POST {{base}}/api/validate
+Content-Type: application/json
+
+{
+  "pipe": {
+    "id": "PIPE-TEST-001",
+    "diameter_mm": 300,
+    "length_m": 50.0,
+    "material": "concrete",
+    "slope": 0.005,
+    "roughness_coefficient": 0.013
+  },
+  "load": { "soil_depth_m": 2.0, "traffic_load_kn": 50.0, "internal_pressure_kpa": 10.0 },
+  "environment": { "flow_type": "gravity", "fluid": "wastewater" }
+}
+
+###
+
+### 시뮬레이션 실행 (정상 케이스)
+POST {{base}}/api/simulate
+Content-Type: application/json
+
+{
+  "schema_version": "1.0",
+  "is_validated": true,
+  "pipe": {
+    "id": "PIPE-TEST-001",
+    "diameter_mm": 300,
+    "length_m": 50.0,
+    "material": "concrete",
+    "slope": 0.005,
+    "roughness_coefficient": 0.013
+  },
+  "load": { "soil_depth_m": 2.0, "traffic_load_kn": 50.0, "internal_pressure_kpa": 10.0 },
+  "environment": { "flow_type": "gravity", "fluid": "wastewater" }
+}
+
+###
+
+### 시뮬레이션 실행 (경고 케이스 - 급경사 소구경)
+POST {{base}}/api/simulate
+Content-Type: application/json
+
+{
+  "schema_version": "1.0",
+  "is_validated": true,
+  "pipe": {
+    "id": "PIPE-TEST-WARNING",
+    "diameter_mm": 150,
+    "length_m": 30.0,
+    "material": "concrete",
+    "slope": 0.15,
+    "roughness_coefficient": 0.013
+  },
+  "load": { "soil_depth_m": 1.0, "traffic_load_kn": 100.0, "internal_pressure_kpa": 5.0 },
+  "environment": { "flow_type": "gravity", "fluid": "stormwater" }
+}
