@@ -1,28 +1,29 @@
 {
+  "id": "QfHwpLZCHt2Q2awC",
   "name": "StructFlow — NL to Simulation Pipeline",
+  "active": true,
   "nodes": [
     {
-      "id": "node-webhook",
-      "name": "Webhook Trigger",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [100, 300],
       "parameters": {
-        "path": "structflow/design",
         "httpMethod": "POST",
+        "path": "structflow/design",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
         }
       },
+      "id": "2ff146a9-6055-4913-888e-1c1eb699d599",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1232,
+        208
+      ],
+      "webhookId": "b175a67b-d59d-4776-915d-1e360a2a4245",
       "notes": "n8n 외부 또는 Unity에서 POST /webhook/structflow/design 로 자연어 입력을 전송한다.\nBody: { \"input\": \"직경 30cm 콘크리트 하수관 50m 경사 0.5%\" }"
     },
     {
-      "id": "node-validate-input",
-      "name": "입력 검증",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [300, 300],
       "parameters": {
         "conditions": {
           "string": [
@@ -33,87 +34,102 @@
           ]
         }
       },
+      "id": "4d5996e0-b499-4f1c-a759-cd6b8d896f4f",
+      "name": "입력 검증",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1008,
+        208
+      ],
       "notes": "input 필드가 비어 있으면 에러 응답을 반환한다."
     },
     {
-      "id": "node-empty-input-error",
-      "name": "빈 입력 에러",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [500, 450],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={ \"success\": false, \"error\": \"입력 텍스트가 비어 있습니다.\" }",
         "options": {
           "responseCode": 400
         }
-      }
+      },
+      "id": "9870b35c-048d-46a3-b34e-cd4192053496",
+      "name": "빈 입력 에러",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        352
+      ]
     },
     {
-      "id": "node-claude-api",
-      "name": "Claude API 호출",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 3,
-      "position": [500, 200],
       "parameters": {
         "method": "POST",
         "url": "https://api.anthropic.com/v1/messages",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-api-key", "value": "={{ $credentials.httpHeaderAuth.value }}" },
-            { "name": "anthropic-version", "value": "2023-06-01" },
-            { "name": "content-type", "value": "application/json" }
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
-        "contentType": "json",
-        "body": {
-          "model": "claude-sonnet-4-6",
-          "max_tokens": 1024,
-          "system": "You are a structural design parameter extraction assistant for drainage pipe systems.\n\nRULES (MUST FOLLOW):\n1. Respond ONLY with valid JSON. No explanation, no markdown, no extra text.\n2. Extract pipe design parameters from the user's natural language input.\n3. If a value cannot be determined, use null and include a \"reason\" field.\n4. Use ONLY these units: diameter in mm, length in m, slope as decimal (0.005 = 0.5%), loads in kN or kPa.\n5. For ambiguous inputs, use conservative (safe) defaults.\n6. material must be one of: concrete, ductile_iron, pvc, steel, hdpe\n\nOUTPUT SCHEMA:\n{\n  \"pipe\": {\n    \"id\": \"PIPE-001\",\n    \"diameter_mm\": <number|null>,\n    \"length_m\": <number|null>,\n    \"material\": <string|null>,\n    \"slope\": <number|null>,\n    \"roughness_coefficient\": <number|null>\n  },\n  \"load\": {\n    \"soil_depth_m\": <number|null>,\n    \"traffic_load_kn\": <number|null>,\n    \"internal_pressure_kpa\": <number|null>\n  },\n  \"environment\": {\n    \"flow_type\": \"gravity\",\n    \"fluid\": \"wastewater\"\n  },\n  \"reason\": <string|null>\n}\n\nCONSERVATIVE DEFAULTS:\n- diameter_mm: 300, length_m: 50.0, material: \"concrete\"\n- slope: 0.005, roughness_coefficient: 0.013\n- soil_depth_m: 2.0, traffic_load_kn: 50.0, internal_pressure_kpa: 10.0",
-          "messages": [
-            {
-              "role": "user",
-              "content": "=Extract pipe design parameters from the following input:\n\n\"{{ $json.body.input }}\""
-            }
-          ]
+        "specifyBody": "json",
+        "jsonBody": "={\"model\":\"claude-haiku-4-5-20251001\",\"max_tokens\":1024,\"system\":\"You are a structural design parameter extraction assistant for drainage pipe systems.\\n\\nRULES (MUST FOLLOW):\\n1. Respond ONLY with valid JSON. No explanations, no markdown, no code blocks.\\n2. Extract or infer these parameters from the user's natural language input:\\n   - pipe.id: string identifier (generate if not provided, e.g. \\\"PIPE-001\\\")\\n   - pipe.diameter_mm: number in millimeters (100-3000)\\n   - pipe.length_m: number in meters (greater than 0)\\n   - pipe.material: one of [concrete, ductile_iron, pvc, steel, hdpe]\\n   - pipe.slope: decimal fraction (0.001-0.200), e.g. 0.5% becomes 0.005\\n   - pipe.roughness_coefficient: Manning's n (typically 0.011-0.016)\\n   - load.soil_depth_m: burial depth in meters (greater than 0)\\n   - load.traffic_load_kn: traffic load in kilonewtons (greater than 0)\\n   - load.internal_pressure_kpa: internal pressure in kilopascals (0 or greater)\\n   - environment.flow_type: gravity or pressure\\n   - environment.fluid: wastewater, stormwater, or clean_water\\n3. Convert unit hints: \\\"30cm\\\" means diameter_mm=300, \\\"0.5%\\\" means slope=0.005\\n4. For missing values, use conservative defaults.\\n5. Output must start with { and end with }\",\"messages\":[{\"role\":\"user\",\"content\":\"{{ $json.body.input }}\"}]}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "35b3ea42-7404-413a-b5f8-3ec414161960",
+      "name": "Claude API 호출",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        -800,
+        112
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CRGf1tipiMfpBza3",
+          "name": "Header Auth account"
         }
       },
       "notes": "Claude API를 호출하여 자연어 입력을 JSON 파라미터로 변환한다.\n자격증명: Anthropic API Key (httpHeaderAuth)"
     },
     {
-      "id": "node-parse-llm-response",
+      "parameters": {
+        "jsCode": "// Claude 응답에서 JSON 추출\nconst responseText = $input.first().json.content[0].text;\n\nlet jsonStr = responseText;\nconst jsonBlockMatch = responseText.match(/```(?:json)?\\s*({[\\s\\S]*?})\\s*```/);\nif (jsonBlockMatch) {\n  jsonStr = jsonBlockMatch[1];\n} else {\n  const objMatch = responseText.match(/\\{[\\s\\S]*\\}/);\n  if (objMatch) jsonStr = objMatch[0];\n}\n\nlet parsed;\ntry {\n  parsed = JSON.parse(jsonStr);\n} catch (e) {\n  return [{ json: { success: false, error: 'LLM 응답 JSON 파싱 실패', raw: responseText } }];\n}\n\nif (parsed.reason && !parsed.pipe?.diameter_mm) {\n  return [{ json: { success: false, error: parsed.reason, parsed } }];\n}\n\nconst pipe = parsed.pipe || {};\nconst now = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);\n\nconst schema = {\n  schema_version: '1.0',\n  created_at: new Date().toISOString(),\n  pipe: {\n    id: pipe.id || `PIPE-${now}`,\n    diameter_mm: pipe.diameter_mm || 300,\n    length_m: pipe.length_m || 50.0,\n    material: pipe.material || 'concrete',\n    slope: pipe.slope || 0.005,\n    roughness_coefficient: pipe.roughness_coefficient || 0.013\n  },\n  load: {\n    soil_depth_m: (parsed.load?.soil_depth_m) || 2.0,\n    traffic_load_kn: (parsed.load?.traffic_load_kn) || 50.0,\n    internal_pressure_kpa: (parsed.load?.internal_pressure_kpa) || 10.0\n  },\n  environment: {\n    flow_type: (parsed.environment?.flow_type) || 'gravity',\n    fluid: (parsed.environment?.fluid) || 'wastewater'\n  },\n  is_validated: false\n};\n\nreturn [{ json: { success: true, schema } }];"
+      },
+      "id": "3c508ad7-3d91-410e-88e5-ac34cb8467f0",
       "name": "LLM 응답 파싱",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [700, 200],
-      "parameters": {
-        "language": "javaScript",
-        "jsCode": "// Claude 응답에서 JSON 추출\nconst responseText = $input.first().json.content[0].text;\n\n// JSON 블록 추출 (마크다운 코드 블록 또는 순수 JSON)\nlet jsonStr = responseText;\nconst jsonBlockMatch = responseText.match(/```(?:json)?\\s*({[\\s\\S]*?})\\s*```/);\nif (jsonBlockMatch) {\n  jsonStr = jsonBlockMatch[1];\n} else {\n  const objMatch = responseText.match(/\\{[\\s\\S]*\\}/);\n  if (objMatch) jsonStr = objMatch[0];\n}\n\nlet parsed;\ntry {\n  parsed = JSON.parse(jsonStr);\n} catch (e) {\n  return [{ json: { success: false, error: 'LLM 응답 JSON 파싱 실패', raw: responseText } }];\n}\n\n// LLM이 변환 실패 이유를 반환한 경우\nif (parsed.reason && !parsed.pipe?.diameter_mm) {\n  return [{ json: { success: false, error: parsed.reason, parsed } }];\n}\n\n// 보수적 기본값 적용\nconst pipe = parsed.pipe || {};\nconst now = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);\n\nconst schema = {\n  schema_version: '1.0',\n  created_at: new Date().toISOString(),\n  pipe: {\n    id: pipe.id || `PIPE-${now}`,\n    diameter_mm: pipe.diameter_mm || 300,\n    length_m: pipe.length_m || 50.0,\n    material: pipe.material || 'concrete',\n    slope: pipe.slope || 0.005,\n    roughness_coefficient: pipe.roughness_coefficient || 0.013\n  },\n  load: {\n    soil_depth_m: (parsed.load?.soil_depth_m) || 2.0,\n    traffic_load_kn: (parsed.load?.traffic_load_kn) || 50.0,\n    internal_pressure_kpa: (parsed.load?.internal_pressure_kpa) || 10.0\n  },\n  environment: {\n    flow_type: (parsed.environment?.flow_type) || 'gravity',\n    fluid: (parsed.environment?.fluid) || 'wastewater'\n  },\n  is_validated: false\n};\n\nreturn [{ json: { success: true, schema } }];"
-      },
+      "position": [
+        -608,
+        112
+      ],
       "notes": "Claude 응답 텍스트에서 JSON을 추출하고 보수적 기본값을 적용한다."
     },
     {
-      "id": "node-validate-schema",
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nif (!item.success) {\n  return [{ json: item }]; // 파싱 실패 — 그대로 전달\n}\n\nconst schema = item.schema;\nconst pipe = schema.pipe;\nconst load = schema.load;\nconst env = schema.environment;\nconst errors = [];\n\n// 파이프 검증\nif (!pipe.id) errors.push('pipe.id is required');\nif (pipe.diameter_mm < 100 || pipe.diameter_mm > 3000)\n  errors.push(`diameter_mm must be 100–3000. Got: ${pipe.diameter_mm}`);\nif (pipe.length_m <= 0 || pipe.length_m > 10000)\n  errors.push(`length_m must be 0–10000. Got: ${pipe.length_m}`);\nif (!['concrete','ductile_iron','pvc','steel','hdpe'].includes(pipe.material))\n  errors.push(`material invalid: ${pipe.material}`);\nif (pipe.slope < 0.001 || pipe.slope > 0.2)\n  errors.push(`slope must be 0.001–0.2. Got: ${pipe.slope}`);\n\n// 하중 검증\nif (load.soil_depth_m < 0 || load.soil_depth_m > 30)\n  errors.push(`soil_depth_m must be 0–30. Got: ${load.soil_depth_m}`);\nif (load.traffic_load_kn < 0 || load.traffic_load_kn > 500)\n  errors.push(`traffic_load_kn must be 0–500. Got: ${load.traffic_load_kn}`);\n\nif (errors.length > 0) {\n  return [{ json: { success: false, errors, schema } }];\n}\n\nschema.is_validated = true;\nreturn [{ json: { success: true, schema } }];"
+      },
+      "id": "db8c29f1-8c20-4031-8533-8bde644e3d0e",
       "name": "스키마 유효성 검사",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 200],
-      "parameters": {
-        "language": "javaScript",
-        "jsCode": "const item = $input.first().json;\n\nif (!item.success) {\n  return [{ json: item }]; // 파싱 실패 — 그대로 전달\n}\n\nconst schema = item.schema;\nconst pipe = schema.pipe;\nconst load = schema.load;\nconst env = schema.environment;\nconst errors = [];\n\n// 파이프 검증\nif (!pipe.id) errors.push('pipe.id is required');\nif (pipe.diameter_mm < 100 || pipe.diameter_mm > 3000)\n  errors.push(`diameter_mm must be 100–3000. Got: ${pipe.diameter_mm}`);\nif (pipe.length_m <= 0 || pipe.length_m > 10000)\n  errors.push(`length_m must be 0–10000. Got: ${pipe.length_m}`);\nif (!['concrete','ductile_iron','pvc','steel','hdpe'].includes(pipe.material))\n  errors.push(`material invalid: ${pipe.material}`);\nif (pipe.slope < 0.001 || pipe.slope > 0.2)\n  errors.push(`slope must be 0.001–0.2. Got: ${pipe.slope}`);\n\n// 하중 검증\nif (load.soil_depth_m < 0 || load.soil_depth_m > 30)\n  errors.push(`soil_depth_m must be 0–30. Got: ${load.soil_depth_m}`);\nif (load.traffic_load_kn < 0 || load.traffic_load_kn > 500)\n  errors.push(`traffic_load_kn must be 0–500. Got: ${load.traffic_load_kn}`);\n\nif (errors.length > 0) {\n  return [{ json: { success: false, errors, schema } }];\n}\n\nschema.is_validated = true;\nreturn [{ json: { success: true, schema } }];"
-      },
+      "position": [
+        -400,
+        112
+      ],
       "notes": "파라미터 범위 및 형식을 검사한다. 실패 시 errors 배열과 함께 반환."
     },
     {
-      "id": "node-check-valid",
-      "name": "유효성 분기",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [1100, 200],
       "parameters": {
         "conditions": {
           "boolean": [
@@ -123,100 +139,193 @@
             }
           ]
         }
-      }
+      },
+      "id": "5ecc4935-3b55-4105-bef4-03de161731c8",
+      "name": "유효성 분기",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        112
+      ]
     },
     {
-      "id": "node-validation-error",
-      "name": "유효성 오류 응답",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [1300, 350],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({ success: false, errors: $json.errors, schema: $json.schema }) }}",
-        "options": { "responseCode": 422 }
-      }
+        "options": {
+          "responseCode": 422
+        }
+      },
+      "id": "c62d0198-90f7-42a0-a9b9-b5b61c53e240",
+      "name": "유효성 오류 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        256
+      ]
     },
     {
-      "id": "node-simulation-api",
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:5000/api/simulate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.schema) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "e1a36b22-7515-4686-9440-f8c66a94e5c9",
       "name": "SimulationEngine API 호출",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
-      "position": [1300, 100],
-      "parameters": {
-        "method": "POST",
-        "url": "http://localhost:5000/api/simulate",
-        "sendBody": true,
-        "contentType": "json",
-        "body": "={{ JSON.stringify($json.schema) }}",
-        "options": { "timeout": 30000 }
-      },
+      "position": [
+        0,
+        0
+      ],
       "notes": "C# SimulationEngine REST API 엔드포인트에 DesignSchema를 전송한다.\n로컬 개발: http://localhost:5000/api/simulate\n프로덕션: 환경변수 SIMULATION_API_URL로 교체"
     },
     {
-      "id": "node-format-result",
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\n\n// 자연어 요약 생성\nconst flow = result.flow;\nconst stress = result.stress;\nconst status = result.overall_status;\n\nlet summary = result.summary || '';\nif (!summary) {\n  if (status === 'NORMAL') {\n    summary = `설계 기준 내 정상 범위입니다. 유속 ${flow?.velocity_ms?.toFixed(2)} m/s, 안전율 ${stress?.safety_factor?.toFixed(2)}.`;\n  } else if (status === 'WARNING') {\n    summary = `주의 필요. 유량 상태: ${flow?.status}, 응력 안전율: ${stress?.safety_factor?.toFixed(2)} (경계값).`;\n  } else {\n    summary = '설계 기준 초과. 즉각적인 검토가 필요합니다.';\n  }\n}\n\nconst unitySummary = {\n  pipe_id: result.pipe_id,\n  calculated_at: result.calculated_at,\n  status: status,\n  velocity_ms: flow ? `${flow.velocity_ms?.toFixed(2)} m/s` : 'N/A',\n  flow_rate_m3s: flow ? `${flow.flow_rate_m3s?.toFixed(4)} m³/s` : 'N/A',\n  fill_ratio: flow ? `${(flow.fill_ratio * 100)?.toFixed(0)}%` : 'N/A',\n  safety_factor: stress ? `${stress.safety_factor?.toFixed(2)}` : 'N/A',\n  summary,\n  warnings: result.warnings?.join('; ') || '없음'\n};\n\nreturn [{ json: {\n  success: true,\n  result,\n  unity_summary: unitySummary,\n  natural_summary: summary\n} }];"
+      },
+      "id": "60c1d5b8-5599-48bb-bc53-d9dd8d928461",
       "name": "결과 포맷 & 자연어 요약",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1500, 100],
-      "parameters": {
-        "language": "javaScript",
-        "jsCode": "const result = $input.first().json;\n\n// 자연어 요약 생성\nconst flow = result.flow;\nconst stress = result.stress;\nconst status = result.overall_status;\n\nlet summary = result.summary || '';\nif (!summary) {\n  if (status === 'NORMAL') {\n    summary = `설계 기준 내 정상 범위입니다. 유속 ${flow?.velocity_ms?.toFixed(2)} m/s, 안전율 ${stress?.safety_factor?.toFixed(2)}.`;\n  } else if (status === 'WARNING') {\n    summary = `주의 필요. 유량 상태: ${flow?.status}, 응력 안전율: ${stress?.safety_factor?.toFixed(2)} (경계값).`;\n  } else {\n    summary = '설계 기준 초과. 즉각적인 검토가 필요합니다.';\n  }\n}\n\nconst unitySummary = {\n  pipe_id: result.pipe_id,\n  calculated_at: result.calculated_at,\n  status: status,\n  velocity_ms: flow ? `${flow.velocity_ms?.toFixed(2)} m/s` : 'N/A',\n  flow_rate_m3s: flow ? `${flow.flow_rate_m3s?.toFixed(4)} m³/s` : 'N/A',\n  fill_ratio: flow ? `${(flow.fill_ratio * 100)?.toFixed(0)}%` : 'N/A',\n  safety_factor: stress ? `${stress.safety_factor?.toFixed(2)}` : 'N/A',\n  summary,\n  warnings: result.warnings?.join('; ') || '없음'\n};\n\nreturn [{ json: {\n  success: true,\n  result,\n  unity_summary: unitySummary,\n  natural_summary: summary\n} }];"
-      },
+      "position": [
+        208,
+        0
+      ],
       "notes": "SimulationResult를 Unity ResultPanel에 맞는 포맷으로 변환하고 자연어 요약을 생성한다."
     },
     {
-      "id": "node-respond",
-      "name": "최종 응답",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [1700, 100],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify($json) }}",
-        "options": { "responseCode": 200 }
-      }
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "c721c68c-a065-4ca8-b821-0ef8c8e83b5b",
+      "name": "최종 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        400,
+        0
+      ]
     }
   ],
   "connections": {
-    "node-webhook": {
-      "main": [[{ "node": "node-validate-input", "type": "main", "index": 0 }]]
-    },
-    "node-validate-input": {
+    "Webhook Trigger": {
       "main": [
-        [{ "node": "node-claude-api", "type": "main", "index": 0 }],
-        [{ "node": "node-empty-input-error", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "입력 검증",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "node-claude-api": {
-      "main": [[{ "node": "node-parse-llm-response", "type": "main", "index": 0 }]]
-    },
-    "node-parse-llm-response": {
-      "main": [[{ "node": "node-validate-schema", "type": "main", "index": 0 }]]
-    },
-    "node-validate-schema": {
-      "main": [[{ "node": "node-check-valid", "type": "main", "index": 0 }]]
-    },
-    "node-check-valid": {
+    "입력 검증": {
       "main": [
-        [{ "node": "node-simulation-api", "type": "main", "index": 0 }],
-        [{ "node": "node-validation-error", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Claude API 호출",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "빈 입력 에러",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "node-simulation-api": {
-      "main": [[{ "node": "node-format-result", "type": "main", "index": 0 }]]
+    "LLM 응답 파싱": {
+      "main": [
+        [
+          {
+            "node": "스키마 유효성 검사",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "node-format-result": {
-      "main": [[{ "node": "node-respond", "type": "main", "index": 0 }]]
+    "스키마 유효성 검사": {
+      "main": [
+        [
+          {
+            "node": "유효성 분기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "유효성 분기": {
+      "main": [
+        [
+          {
+            "node": "SimulationEngine API 호출",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "유효성 오류 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SimulationEngine API 호출": {
+      "main": [
+        [
+          {
+            "node": "결과 포맷 & 자연어 요약",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "결과 포맷 & 자연어 요약": {
+      "main": [
+        [
+          {
+            "node": "최종 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude API 호출": {
+      "main": [
+        [
+          {
+            "node": "LLM 응답 파싱",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
     "executionOrder": "v1",
-    "saveManualExecutions": true,
-    "callerPolicy": "workflowsFromSameOwner"
-  },
-  "meta": {
-    "description": "StructFlow 메인 워크플로우 — 자연어 입력을 파이프 설계 파라미터로 변환하고 시뮬레이션까지 실행한다.",
-    "version": "1.0.0"
+    "binaryMode": "separate",
+    "availableInMCP": false
   }
 }
