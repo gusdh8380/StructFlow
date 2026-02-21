@@ -1,0 +1,39 @@
+# .NET / C#
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.DotSettings
+
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.DS_Store
+*.csproj
+*.sln
+
+# API Keys
+.env
+.env.local
+*.key
+secrets.json
+appsettings.Development.json
+
+# n8n exports (로컬 테스트용)
+n8n/exports/
+
+# 시뮬레이션 결과 임시 파일
+SimulationEngine/results/*.json
