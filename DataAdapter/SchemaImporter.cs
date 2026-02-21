@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StructFlow.ParametricCore.Models;
 using StructFlow.ParametricCore.Validators;
 
@@ -49,7 +50,8 @@ namespace StructFlow.DataAdapter
 
         /// <summary>
         /// LLM이 반환한 부분 JSON(일부 필드만 포함)과 기존 스키마를 병합한다.
-        /// LLM이 채운 필드만 덮어쓰고 나머지는 기존 값을 유지한다.
+        /// JsonDocument로 실제 JSON에 존재하는 필드만 감지하여 덮어쓴다.
+        /// C# 기본값(예: Material = "concrete")이 자동으로 base를 덮어쓰는 버그를 방지한다.
         /// </summary>
         public static (DesignSchema? schema, ValidationResult validation) MergeFromLlmJson(
             string llmJson,
@@ -58,28 +60,72 @@ namespace StructFlow.DataAdapter
             if (!StructFlowJsonSerializer.IsValidJson(llmJson))
                 return (null, ValidationResult.Failure("LLM 응답이 유효한 JSON이 아닙니다."));
 
-            var llmPartial = StructFlowJsonSerializer.DeserializeSchema(llmJson);
-            if (llmPartial == null)
-                return (null, ValidationResult.Failure("LLM 응답 역직렬화에 실패했습니다."));
-
-            var merged = baseSchema ?? new DesignSchema();
-
-            // 파이프 파라미터 — LLM이 명시적으로 값을 준 필드만 덮어쓰기
-            if (llmPartial.Pipe != null)
+            var merged = new DesignSchema();
+            // base 값을 먼저 복사
+            if (baseSchema != null)
             {
-                if (llmPartial.Pipe.DiameterMm > 0) merged.Pipe.DiameterMm = llmPartial.Pipe.DiameterMm;
-                if (llmPartial.Pipe.LengthM > 0) merged.Pipe.LengthM = llmPartial.Pipe.LengthM;
-                if (!string.IsNullOrWhiteSpace(llmPartial.Pipe.Material)) merged.Pipe.Material = llmPartial.Pipe.Material;
-                if (llmPartial.Pipe.Slope > 0) merged.Pipe.Slope = llmPartial.Pipe.Slope;
-                if (llmPartial.Pipe.RoughnessCoefficient > 0) merged.Pipe.RoughnessCoefficient = llmPartial.Pipe.RoughnessCoefficient;
-                if (!string.IsNullOrWhiteSpace(llmPartial.Pipe.Id)) merged.Pipe.Id = llmPartial.Pipe.Id;
+                merged.Pipe = new() {
+                    Id = baseSchema.Pipe.Id,
+                    DiameterMm = baseSchema.Pipe.DiameterMm,
+                    LengthM = baseSchema.Pipe.LengthM,
+                    Material = baseSchema.Pipe.Material,
+                    Slope = baseSchema.Pipe.Slope,
+                    RoughnessCoefficient = baseSchema.Pipe.RoughnessCoefficient
+                };
+                merged.Load = new() {
+                    SoilDepthM = baseSchema.Load.SoilDepthM,
+                    TrafficLoadKn = baseSchema.Load.TrafficLoadKn,
+                    InternalPressureKpa = baseSchema.Load.InternalPressureKpa
+                };
+                merged.Environment = new() {
+                    FlowType = baseSchema.Environment.FlowType,
+                    Fluid = baseSchema.Environment.Fluid
+                };
             }
 
-            if (llmPartial.Load != null)
+            // JsonDocument로 실제 JSON에 존재하는 필드만 병합
+            try
             {
-                if (llmPartial.Load.SoilDepthM > 0) merged.Load.SoilDepthM = llmPartial.Load.SoilDepthM;
-                if (llmPartial.Load.TrafficLoadKn > 0) merged.Load.TrafficLoadKn = llmPartial.Load.TrafficLoadKn;
-                if (llmPartial.Load.InternalPressureKpa > 0) merged.Load.InternalPressureKpa = llmPartial.Load.InternalPressureKpa;
+                using var doc = JsonDocument.Parse(llmJson);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("pipe", out var pipe))
+                {
+                    if (pipe.TryGetProperty("id", out var v) && v.ValueKind == JsonValueKind.String)
+                        merged.Pipe.Id = v.GetString()!;
+                    if (pipe.TryGetProperty("diameter_mm", out v) && v.ValueKind == JsonValueKind.Number)
+                        merged.Pipe.DiameterMm = v.GetDouble();
+                    if (pipe.TryGetProperty("length_m", out v) && v.ValueKind == JsonValueKind.Number)
+                        merged.Pipe.LengthM = v.GetDouble();
+                    if (pipe.TryGetProperty("material", out v) && v.ValueKind == JsonValueKind.String)
+                        merged.Pipe.Material = v.GetString()!;
+                    if (pipe.TryGetProperty("slope", out v) && v.ValueKind == JsonValueKind.Number)
+                        merged.Pipe.Slope = v.GetDouble();
+                    if (pipe.TryGetProperty("roughness_coefficient", out v) && v.ValueKind == JsonValueKind.Number)
+                        merged.Pipe.RoughnessCoefficient = v.GetDouble();
+                }
+
+                if (root.TryGetProperty("load", out var load))
+                {
+                    if (load.TryGetProperty("soil_depth_m", out var v) && v.ValueKind == JsonValueKind.Number)
+                        merged.Load.SoilDepthM = v.GetDouble();
+                    if (load.TryGetProperty("traffic_load_kn", out v) && v.ValueKind == JsonValueKind.Number)
+                        merged.Load.TrafficLoadKn = v.GetDouble();
+                    if (load.TryGetProperty("internal_pressure_kpa", out v) && v.ValueKind == JsonValueKind.Number)
+                        merged.Load.InternalPressureKpa = v.GetDouble();
+                }
+
+                if (root.TryGetProperty("environment", out var env))
+                {
+                    if (env.TryGetProperty("flow_type", out var v) && v.ValueKind == JsonValueKind.String)
+                        merged.Environment.FlowType = v.GetString()!;
+                    if (env.TryGetProperty("fluid", out v) && v.ValueKind == JsonValueKind.String)
+                        merged.Environment.Fluid = v.GetString()!;
+                }
+            }
+            catch (JsonException ex)
+            {
+                return (null, ValidationResult.Failure($"LLM JSON 파싱 오류: {ex.Message}"));
             }
 
             ApplyConservativeDefaults(merged);
