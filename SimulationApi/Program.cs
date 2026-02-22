@@ -101,3 +101,4 @@ app.MapPost("/api/validate", async (HttpRequest request) =>
 // ── 실행 ─────────────────────────────────────────────────────────────────────
 
 app.Run();
+// StructFlow v1.0 — IAM 최소 권한 배포 검증 (2026-02-22)
