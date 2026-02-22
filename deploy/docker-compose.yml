@@ -21,8 +21,8 @@ services:
     expose:
       - "5000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
-      interval: 30s
+      test: ["CMD", "bash", "-c", "cat /dev/null > /dev/tcp/localhost/5000"]
+      interval: 15s
       timeout: 5s
       retries: 3
       start_period: 15s
@@ -43,10 +43,11 @@ services:
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
       - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+      - N8N_SECURE_COOKIE=false
     volumes:
       - n8n_data:/home/node/.n8n
-    expose:
-      - "5678"
+    ports:
+      - "5678:5678"
     networks:
       - structflow-net
     depends_on:

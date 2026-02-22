@@ -29,17 +29,10 @@ RUN dotnet publish SimulationApi/SimulationApi.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-# 비루트 사용자로 실행 (보안)
-RUN adduser --disabled-password --gecos "" appuser && chown -R appuser /app
-USER appuser
-
 COPY --from=build /app/publish .
 
 # 포트 5000에서 수신
 ENV ASPNETCORE_URLS=http://+:5000
 EXPOSE 5000
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:5000/api/health || exit 1
 
 ENTRYPOINT ["dotnet", "SimulationApi.dll"]

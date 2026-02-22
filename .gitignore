@@ -37,3 +37,5 @@ n8n/exports/
 
 # 시뮬레이션 결과 임시 파일
 SimulationEngine/results/*.json
+*.csv
+structflow-key.pem
