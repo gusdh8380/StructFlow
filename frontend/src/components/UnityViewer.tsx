@@ -8,11 +8,12 @@ interface UnityViewerProps {
 }
 
 // Unity WebGL 빌드 경로 (public/unity/ 에 빌드 파일 위치)
+// 빌드 시 출력 파일명: unity.loader.js, unity.data.gz, unity.framework.js.gz, unity.wasm.gz
 const UNITY_CONFIG = {
-  loaderUrl:      '/unity/Build/StructFlow.loader.js',
-  dataUrl:        '/unity/Build/StructFlow.data.gz',
-  frameworkUrl:   '/unity/Build/StructFlow.framework.js.gz',
-  codeUrl:        '/unity/Build/StructFlow.wasm.gz',
+  loaderUrl:      '/unity/Build/unity.loader.js',
+  dataUrl:        '/unity/Build/unity.data.gz',
+  frameworkUrl:   '/unity/Build/unity.framework.js.gz',
+  codeUrl:        '/unity/Build/unity.wasm.gz',
 };
 
 export default function UnityViewer({ result, onUnityReady }: UnityViewerProps) {
