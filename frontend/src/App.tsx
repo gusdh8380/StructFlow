@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import InputPanel from './components/InputPanel';
 import ResultCard from './components/ResultCard';
+import FormulaPanel from './components/FormulaPanel';
 import UnityViewer from './components/UnityViewer';
 import { useSimulation } from './hooks/useSimulation';
 import type { SimulationResult } from './types/simulation';
@@ -53,6 +54,7 @@ export default function App() {
           )}
 
           {result && <ResultCard data={result} />}
+          {result && <FormulaPanel data={result} />}
         </section>
 
         {/* 우측: Unity 3D */}

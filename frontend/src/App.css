@@ -340,6 +340,277 @@ body {
   font-style: italic;
 }
 
+/* ── 수식 설명 패널 ────────────────────────────────────────── */
+.formula-panel {
+  background: var(--surface2);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.formula-panel-header {
+  background: linear-gradient(135deg, #1e3a5f, var(--surface));
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.formula-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.formula-section-last { border-bottom: none; }
+
+.formula-section-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #93c5fd;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+/* 수식 박스 */
+.formula-eq {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 1.05rem;
+  font-family: 'Courier New', monospace;
+  color: #e2e8f0;
+  margin-bottom: 12px;
+  letter-spacing: 0.02em;
+}
+.formula-eq sup, .formula-eq sub { font-size: 0.7em; }
+
+/* 변수 그리드 */
+.formula-vars-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.fvar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+}
+.fvar code {
+  background: rgba(37,99,235,0.2);
+  color: #93c5fd;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  min-width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.fvar span { color: var(--text-muted); flex: 1; }
+.fvar strong { color: var(--text); font-size: 0.82rem; }
+
+/* 해석 박스 */
+.formula-interp {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: rgba(148,163,184,0.06);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.interp-icon { flex-shrink: 0; }
+.formula-interp .ok     { color: #22c55e; }
+.formula-interp .warn   { color: #f59e0b; }
+.formula-interp .danger { color: #ef4444; }
+
+/* 충만율 바 */
+.fill-ratio-bar {
+  position: relative;
+  margin: 10px 0;
+}
+.fill-ratio-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.fill-rec { color: #f59e0b; }
+.fill-track {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.fill-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.fill-limit {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 80%;
+  width: 2px;
+  background: #f59e0b;
+}
+.fill-ratio-value {
+  position: absolute;
+  top: -18px;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* 하중 구성 */
+.load-breakdown {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 10px 0;
+}
+.load-breakdown-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.load-items { display: flex; flex-direction: column; gap: 6px; }
+.load-item {
+  display: grid;
+  grid-template-columns: 110px 130px 1fr;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.76rem;
+}
+.load-name { color: var(--text); font-weight: 600; }
+.load-formula { color: #93c5fd; font-family: 'Courier New', monospace; }
+.load-desc { color: var(--text-muted); }
+
+/* SF 게이지 */
+.sf-gauge { margin: 12px 0 4px; }
+.sf-track {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+}
+.sf-danger-zone { width: 50%; background: linear-gradient(90deg, rgba(239,68,68,0.5), rgba(239,68,68,0.3)); }
+.sf-safe-zone   { width: 50%; background: linear-gradient(90deg, rgba(34,197,94,0.3), rgba(34,197,94,0.5)); }
+.sf-threshold {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: #94a3b8;
+  display: flex;
+  align-items: flex-end;
+}
+.sf-threshold span {
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.sf-marker {
+  position: absolute;
+  top: 0; bottom: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.sf-marker-line {
+  width: 2px;
+  height: 100%;
+  background: white;
+  border-radius: 1px;
+}
+.sf-marker-label {
+  position: absolute;
+  top: -20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.sf-track-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  margin-top: 20px;
+}
+
+/* 설계 권고 */
+.formula-recommend {
+  background: rgba(239,68,68,0.07);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 10px;
+}
+.formula-recommend.warn {
+  background: rgba(245,158,11,0.07);
+  border-color: rgba(245,158,11,0.25);
+}
+.recommend-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fca5a5;
+  margin-bottom: 8px;
+}
+.formula-recommend.warn .recommend-title { color: #fcd34d; }
+.formula-recommend ul {
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.formula-recommend li {
+  font-size: 0.77rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.formula-recommend li strong { color: var(--text); }
+
+/* KDS 기준 요약 */
+.standards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.std-item {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.std-label  { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+.std-value  { font-size: 1rem; font-weight: 700; color: #60a5fa; }
+.std-reason { font-size: 0.7rem; color: var(--text-muted); line-height: 1.3; }
+
 /* ── 반응형 ────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .app-main {
