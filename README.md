@@ -4,6 +4,9 @@
 
 **부강테크 포트폴리오 프로젝트** | 설계 소프트웨어 구조 재설계 + LLM 자동화 + 확장 가능 아키텍처
 
+> **개발 방식**: [Claude Code](https://claude.ai/code)와의 **바이브 코딩(Vibe Coding)** 협업으로 1일 만에 완성.
+> 아키텍처 설계·코드 작성·디버깅·E2E 테스트까지 전 과정을 AI와 페어 프로그래밍으로 진행했습니다.
+
 ---
 
 ## 프로젝트 개요
@@ -270,6 +273,23 @@ dotnet test StructFlow.Tests
 
 ---
 
+## 개발 순서
+
+단일 세션 내 아래 순서로 구현했습니다.
+
+```
+1. ParametricCore — 파이프 파라미터 모델·유효성 검사 (C# 인터페이스 설계)
+2. DataAdapter    — JSON 직렬화/역직렬화, SchemaImporter
+3. SimulationEngine — FlowCalculator(Manning), StressAnalyzer(안전율)
+4. StructFlow.Tests — xUnit 단위 테스트 66건 작성·통과 확인
+5. SimulationApi  — ASP.NET Minimal API POST /api/simulate
+6. n8n 워크플로우 — Webhook → Claude API → JSON Parse → SimEngine API
+7. E2E 디버깅     — 헤더 오류·모델 404·충만율 버그 등 단계별 수정
+8. StructFlowUnity — Unity 6 절차적 메시 파이프 렌더러 + uGUI 결과 패널
+```
+
+---
+
 ## 확장 전략
 
 ```mermaid
@@ -304,6 +324,43 @@ graph TD
 | 시각화 | Unity 6 (6000.0.62f1) / Procedural Mesh / uGUI |
 | 테스트 | xUnit (66 테스트, 100% 통과) |
 | 데이터 포맷 | JSON Schema / System.Text.Json |
+
+---
+
+## 웹 배포 계획 (실무 적용 테스트)
+
+로컬 E2E 검증을 마쳤으며, 다음 단계로 외부 접근 가능한 환경에 배포해 실무 적용 가능성을 검증할 예정입니다.
+
+### 목표 아키텍처
+
+```
+[설계 담당자 브라우저]
+        │  자연어 입력
+        ▼
+[n8n Cloud / Railway n8n]  ← Webhook 공개 URL
+        │  Claude API 호출
+        ▼
+[SimulationEngine API]     ← Railway / Render (Docker or .NET)
+        │  SimulationResult JSON
+        ▼
+[Unity WebGL 빌드]          ← GitHub Pages / Vercel
+        │  결과 시각화
+        ▼
+[실무자 화면에서 파이프 상태 확인]
+```
+
+### 배포 후보
+
+| 컴포넌트 | 후보 플랫폼 | 비용 |
+|----------|------------|------|
+| SimulationEngine API (.NET 9) | Railway.app / Render.com | 무료 티어 |
+| n8n 워크플로우 | n8n Cloud / Railway Docker | 무료 티어 |
+| Unity 시각화 (WebGL) | GitHub Pages / Vercel | 무료 |
+
+### 실무 검증 시나리오
+- 현장 담당자가 모바일 브라우저에서 자연어로 파이프 조건 입력
+- Claude가 파라미터 추출 → SimulationEngine 계산 → WebGL 뷰어에서 결과 확인
+- DANGER 상태 시 경고 알림 → 재설계 반복
 
 ---
 
