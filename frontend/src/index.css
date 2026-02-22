@@ -1,0 +1,22 @@
+/* 전역 리셋 — 상세 스타일은 App.css에서 관리 */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #0f172a;
+  color: #f1f5f9;
+  overflow: hidden;
+}
+
+#root { height: 100vh; }
+
+:root {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 #1e293b;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #1e293b; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }

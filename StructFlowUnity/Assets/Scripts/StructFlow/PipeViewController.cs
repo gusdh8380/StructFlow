@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using StructFlow.UnityView.UI;
@@ -42,6 +43,30 @@ namespace StructFlow.UnityView
                 var btn = btnGo.GetComponent<Button>();
                 if (btn != null)
                     btn.onClick.AddListener(RunSimulation);
+            }
+        }
+
+        /// <summary>
+        /// JavaScript(웹 프론트엔드)에서 SendMessage()로 호출.
+        /// n8n → SimulationEngine 결과 JSON을 직접 수신하여 씬을 업데이트한다.
+        /// </summary>
+        /// <param name="json">SimulationResponse 전체 또는 result 필드 JSON 문자열</param>
+        public void ReceiveSimulationResult(string json)
+        {
+            try
+            {
+                var result = JsonUtility.FromJson<SimulationResponse>(json);
+                if (result == null)
+                {
+                    HandleError("ReceiveSimulationResult: JSON 파싱 결과가 null입니다.");
+                    return;
+                }
+                Debug.Log($"[StructFlow] WebGL 결과 수신: {result.overall_status}");
+                HandleResult(result);
+            }
+            catch (Exception ex)
+            {
+                HandleError($"ReceiveSimulationResult 파싱 실패: {ex.Message}");
             }
         }
 

@@ -10,7 +10,7 @@ on:
       - 'n8n/**'
 
 jobs:
-  # ── 1. 테스트 ────────────────────────────────────────────────────
+  # ── 1. 백엔드 테스트 ──────────────────────────────────────────────
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -25,7 +25,34 @@ jobs:
       - name: Run Tests
         run: dotnet test StructFlow.Tests/StructFlow.Tests.csproj --verbosity minimal
 
-  # ── 2. Docker 이미지 빌드 & ECR 푸시 ────────────────────────────
+  # ── 2. 프론트엔드 빌드 ────────────────────────────────────────────
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install & Build
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Upload frontend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 1
+
+  # ── 3. Docker 이미지 빌드 & ECR 푸시 ────────────────────────────
   build-and-push:
     name: Build Docker Image
     needs: test
@@ -61,13 +88,19 @@ jobs:
           docker push ${{ steps.meta.outputs.image }}
           docker push ${{ steps.login-ecr.outputs.registry }}/structflow-api:latest
 
-  # ── 3. EC2 배포 (SSH) ────────────────────────────────────────────
+  # ── 4. EC2 배포 (SSH) ────────────────────────────────────────────
   deploy:
     name: Deploy to EC2
-    needs: build-and-push
+    needs: [build-and-push, build-frontend]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
 
       - name: Copy deploy files to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -75,9 +108,9 @@ jobs:
           host:     ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key:      ${{ secrets.EC2_SSH_KEY }}
-          source:   "deploy/docker-compose.yml,deploy/nginx.conf"
+          source:   "deploy/docker-compose.yml,deploy/nginx.conf,frontend/dist"
           target:   "/home/${{ secrets.EC2_USER }}/structflow"
-          strip_components: 1
+          strip_components: 0
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -88,20 +121,24 @@ jobs:
           script: |
             cd ~/structflow
 
+            # 파일 구조 정리 (scp 경로 맞춤)
+            mv deploy/docker-compose.yml . 2>/dev/null || true
+            mv deploy/nginx.conf . 2>/dev/null || true
+
             # ECR 로그인
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
               docker login --username AWS --password-stdin \
               ${{ secrets.ECR_REGISTRY }}
 
-            # 최신 이미지 태그로 환경 변수 설정
+            # 최신 이미지로 배포
             export SIMULATION_IMAGE=${{ secrets.ECR_REGISTRY }}/structflow-api:${{ needs.build-and-push.outputs.image-tag }}
 
-            # 롤링 배포 (다운타임 최소화)
             docker compose pull simulation-api
             docker compose up -d --no-deps simulation-api
-            docker compose up -d nginx
+            docker compose up -d --no-deps nginx
 
             # 오래된 이미지 정리
             docker image prune -f
 
             echo "✅ Deployed structflow-api:${{ needs.build-and-push.outputs.image-tag }}"
+            echo "🌐 Frontend: http://${{ secrets.EC2_HOST }}"
