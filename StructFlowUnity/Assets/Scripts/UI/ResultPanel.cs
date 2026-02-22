@@ -46,7 +46,7 @@ namespace StructFlow.UnityView.UI
         public void ShowError(string message)
         {
             ApplyStatus("ERROR");
-            Set(summaryLabel, $"오류: {message}");
+            Set(summaryLabel, $"Error: {message}");
         }
 
         public void Clear()
@@ -71,7 +71,7 @@ namespace StructFlow.UnityView.UI
         {
             if (flow == null) { Set(velocityLabel, "N/A"); Set(flowRateLabel, "N/A"); return; }
             Set(velocityLabel,  $"{flow.velocity_ms:F2} m/s");
-            Set(flowRateLabel,  $"{flow.flow_rate_m3_s:F4} m³/s");
+            Set(flowRateLabel,  $"{flow.flow_rate_m3_s:F4} m3/s");
             Set(fillRatioLabel, $"{flow.fill_ratio * 100f:F0}%  [{flow.status}]");
             if (fillRatioSlider)
             {
@@ -91,12 +91,15 @@ namespace StructFlow.UnityView.UI
 
         private void ApplySummary(string summary, string[] warnings)
         {
-            Set(summaryLabel, summary ?? "");
+            // summary field contains Korean text from API — not renderable in WebGL default font.
+            // Clear it; status/numbers are already shown in other labels.
+            Set(summaryLabel, "");
             if (warningLabel)
             {
                 bool has = warnings != null && warnings.Length > 0;
                 warningLabel.gameObject.SetActive(has);
-                if (has) Set(warningLabel, "⚠ " + string.Join("\n⚠ ", warnings));
+                // Warning texts may contain Korean — show count only.
+                if (has) Set(warningLabel, $"! Warnings: {warnings.Length}");
             }
         }
 
