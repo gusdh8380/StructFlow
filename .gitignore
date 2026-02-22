@@ -22,7 +22,8 @@ obj/
 *.opendb
 *.VC.db
 *.DS_Store
-*.csproj
+# *.csproj  ← 빌드에 필요하므로 추적 (Unity .csproj만 제외)
+StructFlowUnity/**/*.csproj
 *.sln
 
 # API Keys
