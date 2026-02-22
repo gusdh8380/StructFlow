@@ -54,7 +54,6 @@ export default function App() {
           )}
 
           {result && <ResultCard data={result} />}
-          {result && <FormulaPanel data={result} />}
         </section>
 
         {/* 우측: Unity 3D */}
@@ -70,6 +69,13 @@ export default function App() {
           </div>
         </section>
       </main>
+
+      {/* 전체 너비 하단 수식 설명 패널 */}
+      {result && (
+        <section className="formula-section">
+          <FormulaPanel data={result} />
+        </section>
+      )}
     </div>
   );
 }

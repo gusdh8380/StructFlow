@@ -21,10 +21,11 @@ body {
   min-height: 100vh;
 }
 
-#root { height: 100vh; display: flex; flex-direction: column; }
+/* #root는 스크롤 컨테이너 역할 — 수식 패널이 뷰포트 아래 위치 */
+#root { height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
 
 /* ── 헤더 ──────────────────────────────────────────────────── */
-.app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.app { display: flex; flex-direction: column; min-height: 100vh; }
 
 .app-header {
   background: linear-gradient(135deg, #1e3a5f 0%, #1e293b 100%);
@@ -58,9 +59,18 @@ body {
 .app-main {
   display: grid;
   grid-template-columns: 420px 1fr;
-  flex: 1;
+  /* flex: 1 대신 고정 높이 — 수식 패널이 뷰포트 밖 하단에 위치하도록 */
+  flex: 0 0 calc(100vh - 54px);
   overflow: hidden;
   gap: 0;
+}
+
+/* ── 전체 너비 수식 설명 섹션 ─────────────────────────────── */
+.formula-section {
+  flex-shrink: 0;
+  background: var(--bg);
+  border-top: 2px solid var(--border);
+  padding: 0 0 40px;
 }
 
 .left-panel {
