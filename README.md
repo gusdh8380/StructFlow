@@ -327,40 +327,46 @@ graph TD
 
 ---
 
-## 웹 배포 계획 (실무 적용 테스트)
+## AWS 배포 (실무 적용 테스트)
 
-로컬 E2E 검증을 마쳤으며, 다음 단계로 외부 접근 가능한 환경에 배포해 실무 적용 가능성을 검증할 예정입니다.
+로컬 E2E 검증을 마쳤으며, AWS EC2에 배포하여 실무 접근성을 검증 중입니다.
+→ **자세한 배포 절차: [DEPLOY.md](./DEPLOY.md)**
 
-### 목표 아키텍처
+### 배포 아키텍처
 
 ```
-[설계 담당자 브라우저]
-        │  자연어 입력
+GitHub push to main
+        │
         ▼
-[n8n Cloud / Railway n8n]  ← Webhook 공개 URL
-        │  Claude API 호출
+GitHub Actions CI/CD
+  ├─ dotnet test (66건)
+  ├─ docker build & ECR push
+  └─ EC2 SSH rolling deploy
+        │
         ▼
-[SimulationEngine API]     ← Railway / Render (Docker or .NET)
-        │  SimulationResult JSON
-        ▼
-[Unity WebGL 빌드]          ← GitHub Pages / Vercel
-        │  결과 시각화
-        ▼
-[실무자 화면에서 파이프 상태 확인]
+EC2 t3.micro (Amazon Linux 2023)
+  ├─ simulation-api  :5000  (.NET 10 REST API)
+  ├─ n8n             :5678  (워크플로우)
+  └─ nginx           :80    (리버스 프록시)
+        │
+        ├─ /api/simulate      → SimulationEngine
+        ├─ /webhook/structflow → n8n Webhook (공개 URL)
+        └─ /n8n/              → n8n 관리 UI
 ```
 
-### 배포 후보
+### 구성 파일
 
-| 컴포넌트 | 후보 플랫폼 | 비용 |
-|----------|------------|------|
-| SimulationEngine API (.NET 9) | Railway.app / Render.com | 무료 티어 |
-| n8n 워크플로우 | n8n Cloud / Railway Docker | 무료 티어 |
-| Unity 시각화 (WebGL) | GitHub Pages / Vercel | 무료 |
+| 파일 | 역할 |
+|------|------|
+| `Dockerfile` | SimulationApi 멀티스테이지 빌드 (.NET 10 → ASP.NET 런타임) |
+| `deploy/docker-compose.yml` | EC2용 전체 서비스 구성 |
+| `deploy/nginx.conf` | 리버스 프록시 + CORS |
+| `.github/workflows/deploy.yml` | GitHub Actions CI/CD |
 
 ### 실무 검증 시나리오
 - 현장 담당자가 모바일 브라우저에서 자연어로 파이프 조건 입력
-- Claude가 파라미터 추출 → SimulationEngine 계산 → WebGL 뷰어에서 결과 확인
-- DANGER 상태 시 경고 알림 → 재설계 반복
+- Claude가 파라미터 추출 → SimulationEngine 계산 → 결과 JSON 반환
+- DANGER 상태 시 경고 메시지 → 파라미터 수정 후 재설계
 
 ---
 

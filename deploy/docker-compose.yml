@@ -1,0 +1,77 @@
+# StructFlow EC2 배포용 Docker Compose
+# 실행: docker compose up -d
+#
+# 서비스 구성:
+#   simulation-api  — .NET 10 SimulationEngine REST API (:5000 내부)
+#   n8n             — 워크플로우 자동화 (:5678 내부)
+#   nginx           — 리버스 프록시 (:80 외부 공개)
+
+version: "3.9"
+
+services:
+
+  # ── SimulationEngine API ──────────────────────────────────────────
+  simulation-api:
+    image: ${SIMULATION_IMAGE:-structflow-api:latest}
+    container_name: structflow-api
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+    expose:
+      - "5000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - structflow-net
+
+  # ── n8n 워크플로우 ─────────────────────────────────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: structflow-n8n
+    restart: unless-stopped
+    environment:
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://localhost/n8n/}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    expose:
+      - "5678"
+    networks:
+      - structflow-net
+    depends_on:
+      simulation-api:
+        condition: service_healthy
+
+  # ── Nginx 리버스 프록시 ────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: structflow-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - structflow-net
+    depends_on:
+      - simulation-api
+      - n8n
+
+volumes:
+  n8n_data:
+    driver: local
+
+networks:
+  structflow-net:
+    driver: bridge

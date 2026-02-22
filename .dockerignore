@@ -1,0 +1,12 @@
+**/.git
+**/.vs
+**/bin
+**/obj
+**/*.user
+**/.DS_Store
+StructFlowUnity/
+UnityView/
+StructFlow.Tests/
+README.md
+DEPLOY.md
+deploy/

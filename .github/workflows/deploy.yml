@@ -1,0 +1,107 @@
+name: Build & Deploy to AWS EC2
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'README.md'
+      - 'DEPLOY.md'
+      - 'StructFlowUnity/**'
+      - 'n8n/**'
+
+jobs:
+  # ── 1. 테스트 ────────────────────────────────────────────────────
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Run Tests
+        run: dotnet test StructFlow.Tests/StructFlow.Tests.csproj --verbosity minimal
+
+  # ── 2. Docker 이미지 빌드 & ECR 푸시 ────────────────────────────
+  build-and-push:
+    name: Build Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker meta (이미지 태그)
+        id: meta
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "version=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "image=${{ steps.login-ecr.outputs.registry }}/structflow-api:${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Build & Push Docker image
+        run: |
+          docker build -t ${{ steps.meta.outputs.image }} .
+          docker tag  ${{ steps.meta.outputs.image }} \
+            ${{ steps.login-ecr.outputs.registry }}/structflow-api:latest
+          docker push ${{ steps.meta.outputs.image }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/structflow-api:latest
+
+  # ── 3. EC2 배포 (SSH) ────────────────────────────────────────────
+  deploy:
+    name: Deploy to EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy deploy files to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host:     ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key:      ${{ secrets.EC2_SSH_KEY }}
+          source:   "deploy/docker-compose.yml,deploy/nginx.conf"
+          target:   "/home/${{ secrets.EC2_USER }}/structflow"
+          strip_components: 1
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key:      ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/structflow
+
+            # ECR 로그인
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
+              docker login --username AWS --password-stdin \
+              ${{ secrets.ECR_REGISTRY }}
+
+            # 최신 이미지 태그로 환경 변수 설정
+            export SIMULATION_IMAGE=${{ secrets.ECR_REGISTRY }}/structflow-api:${{ needs.build-and-push.outputs.image-tag }}
+
+            # 롤링 배포 (다운타임 최소화)
+            docker compose pull simulation-api
+            docker compose up -d --no-deps simulation-api
+            docker compose up -d nginx
+
+            # 오래된 이미지 정리
+            docker image prune -f
+
+            echo "✅ Deployed structflow-api:${{ needs.build-and-push.outputs.image-tag }}"
