@@ -46,5 +46,6 @@ frontend/dist/
 frontend/node_modules/
 
 # Unity WebGL 빌드 파일 (EC2에 SCP로 별도 배포)
+frontend/public/unity/
 frontend/unity/
 deploy/frontend/unity/
