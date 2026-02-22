@@ -24,6 +24,9 @@ namespace StructFlow.ParametricCore.Models
         /// <summary>LLM이 파라미터를 채울 수 없었을 때 반환하는 이유</summary>
         public string? LlmParseFailReason { get; set; }
 
+        /// <summary>설계 유량 (m³/s). null이면 PipeSimulationEngine이 만관의 75%로 자동 설정.</summary>
+        public double? DesignFlowM3S { get; set; } = null;
+
         /// <summary>스키마 전체 유효성 여부 (DataAdapter가 검사 후 세팅)</summary>
         public bool IsValidated { get; set; } = false;
     }

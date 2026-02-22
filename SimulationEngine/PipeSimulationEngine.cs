@@ -21,7 +21,11 @@ namespace StructFlow.SimulationEngine
 
             try
             {
-                var flowResult   = FlowCalculator.Calculate(schema.Pipe);
+                // KDS 57 17 00: 기본 설계 충만율 75% (설계 유량 미지정 시)
+                // 만관(100%) 대신 실무 설계 기준인 75% 충만 조건으로 계산
+                double fullFlow = FlowCalculator.CalculateFullFlow(schema.Pipe);
+                double designFlow = schema.DesignFlowM3S ?? fullFlow * 0.75;
+                var flowResult   = FlowCalculator.Calculate(schema.Pipe, designFlow);
                 var stressResult = StressAnalyzer.Analyze(schema.Pipe, schema.Load);
 
                 var warnings = new List<string>();

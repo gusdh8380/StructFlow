@@ -27,6 +27,18 @@ namespace StructFlow.SimulationEngine
         private const double MIN_VELOCITY_MS = 0.6;
         private const double MAX_VELOCITY_MS = 3.0;
 
+        /// <summary>만관(full-flow) 유량만 반환. PipeSimulationEngine에서 설계 유량 계산에 사용.</summary>
+        public static double CalculateFullFlow(PipeParameter pipe)
+        {
+            double radiusM = pipe.DiameterMm / 1000.0 / 2.0;
+            double fullArea = Math.PI * radiusM * radiusM;
+            double hydraulicRadius = radiusM / 2.0;
+            double fullVelocityMs = (1.0 / pipe.RoughnessCoefficient)
+                                    * Math.Pow(hydraulicRadius, 2.0 / 3.0)
+                                    * Math.Pow(pipe.Slope, 0.5);
+            return fullVelocityMs * fullArea;
+        }
+
         /// <summary>
         /// 만관(full-flow) 조건으로 유량/유속을 계산한다.
         /// 충만율은 실제 설계 유량 기준으로 역산한다.
