@@ -9,12 +9,11 @@ export default function FormulaPanel({ data }: FormulaPanelProps) {
   const flow   = result.flow;
   const stress = result.stress;
 
-  const sfPct        = (stress.safety_factor * 100).toFixed(0);
   const allowableKpa = (stress.safety_factor * stress.max_stress_kpa).toFixed(1);
   const fillPct      = (flow.fill_ratio * 100).toFixed(0);
 
   const flowColor   = flow.status   === 'NORMAL' ? '#22c55e' : flow.status   === 'WARNING' ? '#f59e0b' : '#ef4444';
-  const stressColor = stress.status === 'NORMAL' ? '#22c55e' : stress.status === 'WARNING' ? '#f59e0b' : '#ef4444';
+  const stressColor = stress.status === 'SAFE'   ? '#22c55e' : stress.status === 'WARNING' ? '#f59e0b' : '#ef4444';
 
   return (
     <div className="formula-panel">
