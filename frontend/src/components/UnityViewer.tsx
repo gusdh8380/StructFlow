@@ -85,6 +85,7 @@ function UnityCanvas({
       <Unity
         unityProvider={unityProvider}
         style={{
+          display: 'block',   /* inline 기본값으로 인한 하단 여백 제거 */
           width: '100%',
           height: '100%',
           visibility: isLoaded ? 'visible' : 'hidden',

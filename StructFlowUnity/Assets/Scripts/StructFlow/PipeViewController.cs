@@ -26,6 +26,10 @@ namespace StructFlow.UnityView
         [SerializeField] private float  soilDepthM    = 2f;
         [SerializeField] private float  trafficLoadKn = 50f;
 
+        [Header("시각화 설정")]
+        [Tooltip("3D 뷰에서 표시할 파이프 길이(m). 물리 계산과 무관한 시각적 스케일.")]
+        [SerializeField, Range(2f, 20f)] private float displayLengthM = 8f;
+
         private void Awake()
         {
             if (apiClient == null) apiClient = GetComponent<SimulationApiClient>();
@@ -83,10 +87,11 @@ namespace StructFlow.UnityView
             Debug.Log($"[StructFlow] Result: {result.overall_status}, fill={result.flow?.fill_ratio:P0}");
 
             // PipeRenderer 업데이트
+            // displayLengthM: 카메라 뷰에 맞춘 고정 시각적 길이 (실제 물리 길이 lengthM과 별개)
             if (pipeRenderer != null)
             {
                 pipeRenderer.SetDiameter(diameterMm / 1000f);
-                pipeRenderer.SetLength(lengthM);
+                pipeRenderer.SetLength(displayLengthM);
                 pipeRenderer.UpdateFluidVolume(result.flow?.fill_ratio ?? 0f);
                 pipeRenderer.SetStatus(result.overall_status);
             }

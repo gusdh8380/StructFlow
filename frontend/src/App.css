@@ -92,7 +92,7 @@ body {
   gap: 8px;
 }
 
-.unity-panel-body { flex: 1; overflow: hidden; position: relative; }
+.unity-panel-body { flex: 1; overflow: hidden; position: relative; min-height: 0; }
 
 /* ── 입력 패널 ─────────────────────────────────────────────── */
 .input-panel {
