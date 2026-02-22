@@ -116,6 +116,7 @@ body {
   flex-direction: column;
   background: #0a0f1e;
   overflow: hidden;
+  padding: 16px 20px 16px 0;
 }
 
 .unity-panel-header {
@@ -128,9 +129,10 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  border-radius: 8px 8px 0 0;
 }
 
-.unity-panel-body { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+.unity-panel-body { flex: 1; overflow: hidden; position: relative; min-height: 0; border-radius: 0 0 8px 8px; }
 
 /* ── 입력 패널 ─────────────────────────────────────────────── */
 .input-panel {
