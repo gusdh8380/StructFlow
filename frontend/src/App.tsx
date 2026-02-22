@@ -71,11 +71,21 @@ export default function App() {
       </main>
 
       {/* 전체 너비 하단 수식 설명 패널 */}
-      {result && (
-        <section className="formula-section">
-          <FormulaPanel data={result} />
-        </section>
-      )}
+      <section className="formula-section">
+        {result
+          ? <FormulaPanel data={result} />
+          : (
+            <div className="formula-empty">
+              <span className="formula-empty-icon">📐</span>
+              <p className="formula-empty-title">계산 근거 &amp; 공학 수식</p>
+              <p className="formula-empty-desc">
+                시뮬레이션을 실행하면 Manning 공식, 충만율, 구조 안전율 등<br />
+                상세한 계산 근거와 수치가 여기에 표시됩니다.
+              </p>
+            </div>
+          )
+        }
+      </section>
     </div>
   );
 }
