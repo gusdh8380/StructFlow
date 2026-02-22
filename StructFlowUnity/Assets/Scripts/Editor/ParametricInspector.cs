@@ -6,6 +6,7 @@
 #if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
+using StructFlow.UnityView;
 
 namespace StructFlow.UnityView.Editor
 {

@@ -33,6 +33,8 @@ using UnityEngine.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
+using StructFlow.UnityView;
+using StructFlow.UnityView.UI;
 
 namespace StructFlow.UnityView.Editor
 {

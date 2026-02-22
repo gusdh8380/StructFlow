@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using StructFlow.UnityView.UI;
 
 namespace StructFlow.UnityView
 {
